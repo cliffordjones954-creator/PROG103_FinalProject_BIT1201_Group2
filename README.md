@@ -1,83 +1,137 @@
-# PROG103_FinalProject_BIT1201_Group2
-Health Appointment System (Python, SQLite, Tkinter)
-# Overview
-The Health Appointment System is a GUI-based application designed to help clinics manage patient registration and doctor appointments. It provides features for booking, rescheduling, and canceling appointments, while ensuring data integrity through an SQLite database. The system applies structured programming principles to improve readability, maintainability, and reliability.
+# AuraClinic — Healthcare Management System
 
-# Features
-Patient Registration: Add new patients with name, contact, and age. Search patients by ID.
-
-Doctor Management: Preloaded sample doctors with names, specializations, and consultation fees.
-
-Appointment Booking: Book appointments by selecting patient ID, doctor, date, and time. Prevents double-booking.
-
-Rescheduling: Update appointment date and time while checking for conflicts.
-
-Cancellation: Cancel appointments by ID, updating their status.
-
-Confirmation Tab: View all appointments in a structured table with patient, doctor, date, time, and status.
-
-Login System: Basic authentication for admin and staff users.
-
-# Project Structure
-Component	Description
-Database Setup	Creates three tables: Doctors, Patients, Appointments. Uses foreign keys for relational integrity.
-Functions	Modular functions for CRUD operations (register_patient, book_appointment, reschedule_appointment, cancel_appointment).
-GUI Tabs	Tkinter Notebook with three tabs: Registration, Appointments, Confirmation.
-Login Screen	Ensures only authorized users can access the system.
+A desktop healthcare management application built with **Python** and **tkinter**, designed to help small to medium-sized clinics digitize patient registration, appointment scheduling, and record management — without requiring a database server or internet connection.
 
 
-# Technologies Used
-Python (Core programming language)
+---
 
-SQLite (Lightweight relational database)
+## 📋 Overview
 
-Tkinter (GUI framework for Python)
+AuraClinic replaces error-prone, paper-based clinic workflows with a clean, navigable desktop interface. After logging in, staff can register patients, book appointments with real-time slot availability, manage the full appointment lifecycle, and search patient records using multiple filters.
 
-# How to Run
-Install Python 3.x.
+This project was built as a final project for **PROG103 — Principles of Structured Programming**.
 
-Save the script as clinic_system.py.
+---
 
-Run the program:
+## ✨ Features
 
-bash
-python clinic_system.py
-Login using:
+- 🔐 **Secure Login** — Username/password authentication with a show/hide password toggle
+- 🧑‍⚕️ **Register Patient** — Add, update, delete, and browse patient records
+- 📅 **Book Appointment** — Department/doctor selection with a live, color-coded time-slot grid that blocks double-bookings
+- 📋 **Appointment Records** — Search, filter, view, edit, cancel, and mark appointments as completed
+- 🔎 **Search Patient** — Multi-filter search (ID, name, phone, gender, blood group, date range) with CSV export
+- 🖥️ **Single-window navigation** — All pages load inside one persistent application shell with a live clock and sidebar menu
 
-Admin → Username: admin, Password: 1234
+---
 
-Staff → Username: staff, Password: 0000
+## 🗂️ Project Structure
 
-# Workflow
-Login as admin/staff.
+```
+AuraClinic/
+├── login_page.py          # Login window (entry point of the application)
+├── register_patient.py    # Main application shell + all 4 pages
+├── Login page1.png         # Illustration shown on the login screen
+└── Logo and icons/         # Icons and header image used throughout the app
+    ├── image.png
+    ├── Vector.png
+    ├── Calender icon.png
+    ├── appointment records icon.png
+    ├── Search patient icon.png
+    ├── log-out icon.png
+    ├── home icon.png
+    ├── Save patient icon.png
+    ├── update icon.png
+    ├── delete icon.png
+    ├── clear icon.png
+    ├── reseticon.png
+    ├── export icon.png
+    ├── View Details icon.png
+    ├── Edit Appointment icon.png
+    ├── Cancel Appointment icon.png
+    └── Mark as completed icon.png
+```
 
-Register a patient with name, contact, and age.
+> ⚠️ All files and folders must stay in the **same directory** for the app to find the images correctly.
 
-Book an appointment by selecting patient ID, doctor, date, and time.
+---
 
-Reschedule or cancel if needed.
+## 🚀 Getting Started
 
-View confirmation tab to see all scheduled appointments and statistics.
+### Prerequisites
 
-# Structured Programming Principles Applied
-Variables & Constants: Store patient details, doctor info, and appointment data.
+- Python 3.x
+- [Pillow](https://pillow.readthedocs.io/) (the only external dependency)
 
-Decision Structures: Validate inputs before database operations.
+### Installation
 
-Iteration: Loops used for inserting doctors and refreshing records.
+```bash
+git clone https://github.com/<your-username>/AuraClinic.git
+cd AuraClinic
+pip install Pillow
+```
 
-Functions: Modularized operations for clarity and maintainability.
+### Run the app
 
-Error Handling: Popup messages guide users when inputs are invalid.
+```bash
+python login_page.py
+```
 
-# SDG Relevance
-SDG 3: Good Health and Well-Being → Improves healthcare delivery and patient satisfaction.
+### Demo credentials
 
-SDG 9: Industry, Innovation, and Infrastructure → Provides lightweight digital infrastructure for clinics in resource-constrained settings.
+| Username | Password   |
+|----------|------------|
+| admin    | admin123   |
+| doctor   | doc2025    |
+| nurse    | nurse2025  |
 
-# References
-Python Software Foundation. Python 3 Documentation.
+---
 
-SQLite Consortium. SQLite Documentation.
+## 🖥️ Pages
 
-United Nations. Sustainable Development Goals.
+| Page | Description |
+|------|-------------|
+| **Login** | Validates credentials and launches the main dashboard |
+| **Register Patient** | Form-based CRUD for patient records, with a live patient list table |
+| **Book Appointment** | Patient lookup, department/doctor selection, and an interactive time-slot picker |
+| **Appointment Records** | Search/filter appointments and manage their status (Booked / Completed / Cancelled) |
+| **Search Patient** | Advanced multi-field patient search with CSV export |
+
+---
+
+## 🛠️ Built With
+
+- **Python 3** — core application logic
+- **tkinter** — GUI framework
+- **Pillow (PIL)** — image and icon rendering
+- **ttk.Treeview** — data tables for patients and appointments
+
+---
+
+## 🧱 Architecture Notes
+
+- All patient and appointment data is held in shared in-memory lists (`PATIENTS`, `APPOINTMENTS`), making it easy to swap in a real database (e.g. SQLite) later.
+- Each page is implemented as an independent `tk.Frame` subclass, keeping the codebase modular and easy to extend.
+- Shared helper functions (`_btn`, `_form_entry`, `_form_combo`, `load_icon`) centralize styling so the UI stays consistent across all pages.
+
+---
+
+## 🌍 SDG Alignment
+
+This project supports:
+- **SDG 3 — Good Health and Well-Being**, by reducing administrative errors and improving patient record accuracy
+- **SDG 9 — Industry, Innovation, and Infrastructure**, by demonstrating that meaningful digital infrastructure is achievable in low-resource clinic settings using free, open-source tools
+
+---
+
+## 👥 Authors
+
+**BIT1201 — Group 2**
+- Clifford Joshua Jones
+- Jane Sarah Bangura
+- Ismatu Kamara
+
+---
+
+## 📄 License
+
+This project was created for academic purposes as part of the PROG103 course.
