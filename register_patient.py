@@ -475,7 +475,7 @@ class RegisterPatientPage(tk.Frame):
         if vals is None: return
         if find_patient(vals["id"]):                                              # ← new line
             messagebox.showwarning("Save", "Already registered — use Update.")    # ← new line
-        return                                                                # ← new line
+            return                                                                # ← new line
         PATIENTS.append(vals)
         self._refresh_table()
         messagebox.showinfo("Saved", f"Patient {vals['id']} registered successfully.")
