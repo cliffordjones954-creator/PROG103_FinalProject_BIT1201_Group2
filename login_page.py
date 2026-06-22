@@ -44,7 +44,8 @@ PNG_NAMES = ["Login page1.png"]
 VALID_USERS = {
     "admin":   "admin123",
     "doctor":  "doc2025",
-    "nurse":   "nurse2025",}
+    "nurse":   "nurse2025",
+    "group1":  "group1pass",}
 
 
 # ── Load & crop left panel ────────────────────────────────────────────────────
