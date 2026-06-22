@@ -7,6 +7,7 @@ Place this file (and the "Logo and icons" folder) in the same directory as login
 Requires: pip install Pillow
 """
 
+from pydoc import doc
 import tkinter as tk
 from tkinter import ttk, messagebox
 import os, datetime, csv
@@ -77,6 +78,9 @@ _appt_ctr = [6]
 
 def _next_pid():
     v = f"P{_pat_ctr[0]}"; _pat_ctr[0] += 1; return v
+
+def _peek_pid():
+    return f"P{_pat_ctr[0]}"
 
 def _next_aid():
     v = f"A{_appt_ctr[0]:03d}"; _appt_ctr[0] += 1; return v
@@ -352,29 +356,30 @@ class RegisterPatientPage(tk.Frame):
         self._build()
 
     def _build(self):
-        # Scrollable canvas
+    # Scrollable canvas
         canvas = tk.Canvas(self, bg=WHITE, highlightthickness=0)
         scroll = tk.Scrollbar(self, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         canvas.pack(side="left", fill="both", expand=True)
-
         inner = tk.Frame(canvas, bg=WHITE)
         win_id = canvas.create_window((0, 0), window=inner, anchor="nw")
 
         def _on_frame_conf(e):
-            canvas.configure(scrollregion=canvas.bbox("all"))
+             canvas.configure(scrollregion=canvas.bbox("all"))
         def _on_canvas_conf(e):
-            canvas.itemconfig(win_id, width=e.width)
+             canvas.itemconfig(win_id, width=e.width)
         inner.bind("<Configure>", _on_frame_conf)
         canvas.bind("<Configure>", _on_canvas_conf)
-        canvas.bind_all("<MouseWheel>",
-                        lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+        def _scroll(e):
+             canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _scroll))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
 
         self._inner = inner
         self._build_form(inner)
         self._build_table(inner)
-
+        
     def _build_form(self, parent):
         _section_title(parent, "PATIENT REGISTRATION")
 
@@ -477,6 +482,7 @@ class RegisterPatientPage(tk.Frame):
             messagebox.showwarning("Save", "Already registered — use Update.")    # ← new line
             return                                                                # ← new line
         PATIENTS.append(vals)
+        _pat_ctr[0] += 1
         self._refresh_table()
         messagebox.showinfo("Saved", f"Patient {vals['id']} registered successfully.")
         self._clear_form()
@@ -495,7 +501,11 @@ class RegisterPatientPage(tk.Frame):
     def _delete(self):
         if not self._selected_id:
             messagebox.showwarning("Delete", "Select a patient to delete."); return
-        if messagebox.askyesno("Delete", f"Delete patient {self._selected_id}?"):
+        has_appts = any(a["patient_id"] == self._selected_id and a["status"] != "Cancelled"
+                         for a in APPOINTMENTS)
+        msg = (f"{self._selected_id} has active appointments. Delete patient anyway?"
+               if has_appts else f"Delete patient {self._selected_id}?")
+        if messagebox.askyesno("Delete", msg):
             global PATIENTS
             PATIENTS = [p for p in PATIENTS if p["id"] != self._selected_id]
             self._refresh_table()
@@ -526,7 +536,7 @@ class RegisterPatientPage(tk.Frame):
 
     def _clear_form(self, _=None):
         self._selected_id = None
-        self.v_id.set(_next_pid())
+        self.v_id.set(_peek_pid())
         for v in [self.v_name, self.v_age, self.v_address,
                   self.v_email, self.v_condition]:
             v.set("")
@@ -937,11 +947,16 @@ class BookAppointmentPage(tk.Frame):
             w.destroy()
         self._time_btns = {}
 
-        # Get booked times for this doctor+date
+       # Get booked times for this doctor+date
         booked = {a["time"] for a in APPOINTMENTS
-                  if a["doctor"] == self.bv_doc.get()
-                  and a["date"]  == self.bv_date.get()
-                  and a["status"] != "Cancelled"}
+               if a["doctor"] == self.bv_doc.get()
+               and a["date"]  == self.bv_date.get()
+               and a["status"] != "Cancelled"}
+         # Also get booked times for this patient+date to prevent double booking  # ← new
+        booked |= {a["time"] for a in APPOINTMENTS                                # ← new
+               if a["patient_id"] == self.bv_pid.get().strip().upper()               # ← new
+               and a["date"]      == self.bv_date.get()                       # ← new
+               and a["status"]    != "Cancelled"}                             # ← new
 
         for i, slot in enumerate(TIME_SLOTS):
             r, c = divmod(i, 2)
@@ -1003,25 +1018,36 @@ class BookAppointmentPage(tk.Frame):
             self.bv_name.set(""); self.bv_phone.set("")
 
     def _book(self):
-        pid  = self.bv_pid.get().strip()
+        pid  = self.bv_pid.get().strip().upper()
         name = self.bv_name.get().strip()
         doc  = self.bv_doc.get().strip()
         date = self.bv_date.get().strip()
         time = self.bv_time.get().strip()
 
         if not pid:  messagebox.showwarning("Validation","Enter Patient ID."); return
-        if not name: messagebox.showwarning("Validation","Look up a valid patient first."); return
+        p = find_patient(pid)
+        if not p:
+            messagebox.showwarning("Validation","Look up a valid patient first."); return
+        name = p["name"]
         if not doc:  messagebox.showwarning("Validation","Select a doctor."); return
         if not date: messagebox.showwarning("Validation","Enter appointment date."); return
         if not time: messagebox.showwarning("Validation","Select an appointment time."); return
 
-        # Check for conflict
+    # Check for conflict
         for a in APPOINTMENTS:
-            if (a["doctor"]==doc and a["date"]==date and
-                    a["time"]==time and a["status"]!="Cancelled"):
-                messagebox.showerror("Conflict",
-                    f"{doc} already has an appointment at {time} on {date}.")
-                return
+         if (a["doctor"]==doc and a["date"]== date and
+                a["time"]==time and a["status"]!="Cancelled"):
+            messagebox.showerror("Conflict",
+                f"{doc} already has an appointment at {time} on {date}.")
+            return
+
+        for a in APPOINTMENTS:                                                    # ← new
+         if (a["patient_id"]==pid and a["date"]==date and                      # ← new
+                a["time"]==time and a["status"]!="Cancelled"):                # ← new
+            messagebox.showerror("Conflict",                                  # ← new
+                f"{name} already has an appointment at {time} on {date}.")    # ← new
+            return                                                            # ← new
+        
 
         new_appt = {
             "appt_id":    _next_aid(),
@@ -1360,11 +1386,19 @@ class AppointmentRecordsPage(tk.Frame):
         EditAppointmentDialog(self, a, self._after_edit)
 
     def _after_edit(self, updated):
+        conflict = any(a["doctor"] == updated["doctor"] and a["date"] == updated["date"]   # ← new
+                       and a["time"] == updated["time"] and a["status"] != "Cancelled"     # ← new
+                       and a["appt_id"] != updated["appt_id"] for a in APPOINTMENTS)        # ← new
+        if conflict:                                                                       # ← new
+            messagebox.showerror("Conflict",                                               # ← new
+                f"{updated['doctor']} already has an appointment at {updated['time']} on {updated['date']}.")  # ← new
+            return                                                                          # ← new
         for i, a in enumerate(APPOINTMENTS):
             if a["appt_id"] == updated["appt_id"]:
                 APPOINTMENTS[i] = updated; break
+        self._sel_appt = updated  
         self._do_search()
-        self._on_select(None)
+        self._on_select(None)   
 
     def _cancel_appt(self):
         if not self._sel_appt:
